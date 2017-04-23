@@ -1,0 +1,64 @@
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/fgrehm/go-dockerpty"
+	"github.com/fsouza/go-dockerclient"
+)
+
+func main() {
+	//	endpoint := "unix:///var/run/docker.sock"
+	endpoint := "http://9.111.213.128:2375"
+	client, _ := docker.NewClient(endpoint)
+
+	//	// Create container
+	//	container, err := client.CreateContainer(docker.CreateContainerOptions{
+	//		Name: "date-service",
+	//		Config: &docker.Config{
+	//			Image: "busybox",
+	//			Cmd:   []string{"/bin/sh", "-c", "while true; do date >> /tmp/date.log; sleep 1; done"},
+	//		},
+	//	})
+
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		os.Exit(1)
+	//	}
+
+	// Cleanup when done
+	defer func() {
+		client.RemoveContainer(docker.RemoveContainerOptions{
+			ID:    "f9fd1af120ff",
+			Force: true,
+		})
+	}()
+
+	//	err = client.StartContainer(container.ID, &docker.HostConfig{})
+
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		os.Exit(1)
+	//	}
+
+	exec, err := client.CreateExec(docker.CreateExecOptions{
+		Container:    "f9fd1af120ff",
+		AttachStdin:  true,
+		AttachStdout: true,
+		AttachStderr: true,
+		Tty:          true,
+		Cmd:          []string{"/bin/bash"},
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	//	 Fire up the console
+	if err = dockerpty.StartExec(client, exec); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
